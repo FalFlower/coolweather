@@ -5,9 +5,13 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -28,6 +32,10 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
+    public DrawerLayout drawerLayout;//DrawerLayout的第一个控件用于主屏幕中显示的内容，第二个子空间用于作为滑动菜单中显示内容
+    private Button navButton;
+    public SwipeRefreshLayout swipeRefresh;
+    private String mWeatherId;
     private ScrollView weatherLayout;
     private TextView titleCity;
     private TextView titleUpdateTime;
@@ -66,18 +74,39 @@ public class WeatherActivity extends AppCompatActivity {
         sportText=(TextView)findViewById(R.id.sport_text);
         bingPicImg=(ImageView)findViewById(R.id.bing_pic_img);
 
+        swipeRefresh=(SwipeRefreshLayout)findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
+
+        drawerLayout=(DrawerLayout)findViewById(R.id.drawer_layout);
+        navButton=(Button)findViewById(R.id.nav_button);
+        navButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                drawerLayout.openDrawer(GravityCompat.START);//openDrawer打开滑动菜单
+            }
+        });
+
         SharedPreferences prefs= PreferenceManager.getDefaultSharedPreferences(this);
         String weatherString=prefs.getString("weather",null);//第一个参数是键，第二个参数是默认值，如果找不到，返回什么类型的值
         if (weatherString!=null){
             //有缓存时直接解析天气数据
             Weather weather= Utility.handleWeatherResponse(weatherString);
+            mWeatherId=weather.basic.weatherId;
             showWeatherInfo(weather);
         }else {
             //没有缓存就去服务器查询天气
-            String weatherId=getIntent().getStringExtra("weather_id");
+
+            mWeatherId=getIntent().getStringExtra("weather_id");
             weatherLayout.setVisibility(View.INVISIBLE);
-            requestWeather(weatherId);
+            requestWeather(mWeatherId);
         }
+
+        swipeRefresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeather(mWeatherId);
+            }
+        });
 
         String bingPic=prefs.getString("bing_pic",null);
         if (bingPic!=null){
@@ -89,7 +118,7 @@ public class WeatherActivity extends AppCompatActivity {
 /*
 * 根据天气id请求城市天气信息
 * */
-    private void requestWeather(final String weatherId) {
+    public void requestWeather(final String weatherId) {
         String weatherUrl="http://guolin.tech/api/weather?cityid="+weatherId+"&key=e6cee203e57344bfb84bdce0391a5ca7";
         HttpUtil.sendOkHttpRequest(weatherUrl, new Callback() {
             @Override
@@ -107,6 +136,7 @@ public class WeatherActivity extends AppCompatActivity {
                         }else {
                             Toast.makeText(WeatherActivity.this,"获取天气信息失败_",Toast.LENGTH_SHORT).show();
                         }
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -117,6 +147,7 @@ public class WeatherActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -186,6 +217,10 @@ public class WeatherActivity extends AppCompatActivity {
         carWashText.setText(carWash);
         sportText.setText(sport);
         weatherLayout.setVisibility(View.VISIBLE);
+    }
+    //重置weatherId
+    public void resetWeatherId(String id){
+        mWeatherId=id;
     }
 
 }
