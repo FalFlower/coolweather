@@ -6,6 +6,9 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.AnimationUtils;
+import android.view.animation.LayoutAnimationController;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -113,6 +116,7 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();//notifyDataSetChanged是Adater的一个方法,主要用来通知ListView,告诉它Adapter的数据发生了变化,需要更新ListView的显示
             listView.setSelection(0);
+            setListViewAnimation();//设置动画
             currentLevel=LEVEL_PROVINCE;
         }else {
             String address="http://guolin.tech/api/china";
@@ -135,6 +139,7 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);//这个方法的作用就是将第0个item显示在listView的最上面一项
+            setListViewAnimation();//设置动画
             currentLevel=LEVEL_CITY;
         }else {
             int provinceCode=selectedProvince.getProvinceCode();
@@ -157,6 +162,7 @@ public class ChooseAreaFragment extends Fragment {
             }
             adapter.notifyDataSetChanged();
             listView.setSelection(0);
+            setListViewAnimation();//设置动画
             currentLevel=LEVEL_COUNTY;
         }else {
             int provinceCode=selectedProvince.getProvinceCode();
@@ -229,5 +235,17 @@ public class ChooseAreaFragment extends Fragment {
             progressDialog.setCanceledOnTouchOutside(false);
         }
     }
-
+    //设置动画
+    private void setListViewAnimation(){
+        LayoutAnimationController controller=new LayoutAnimationController(AnimationUtils.loadAnimation(getContext(),R.anim.listview_anim));
+//        LayoutAnimationController.ORDER_NORMAL;    //顺序显示
+//        LayoutAnimationController.ORDER_REVERSE;//反显示
+//        LayoutAnimationController.ORDER_RANDOM//随机显示
+        controller.setOrder(LayoutAnimationController.ORDER_NORMAL);
+        controller.setInterpolator(new AccelerateInterpolator());
+        listView.setLayoutAnimation(controller);
+        listView.startLayoutAnimation();
+    }
 }
+
+
