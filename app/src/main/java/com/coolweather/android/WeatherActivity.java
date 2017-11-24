@@ -1,5 +1,6 @@
 package com.coolweather.android;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.coolweather.android.gson.Forecast;
 import com.coolweather.android.gson.Weather;
+import com.coolweather.android.service.AutoUpdateService;
 import com.coolweather.android.util.HttpUtil;
 import com.coolweather.android.util.Utility;
 
@@ -184,39 +186,47 @@ public class WeatherActivity extends AppCompatActivity {
     * 处理并展示Weather实体类中的数据
     * */
     private void showWeatherInfo(Weather weather) {
-        String cityName=weather.basic.cityName;
-        String updateTime=weather.basic.update.updateTime.split(" ")[1];//拆分字符
-        String degree=weather.now.temperature+"℃";
-        String weatherInfo=weather.now.more.info;
-        titleCity.setText(cityName);
-        titleUpdateTime.setText(updateTime);
-        degreeText.setText(degree);
-        weatherInfoText.setText(weatherInfo);
-        forecastLayout.removeAllViews();
-        for(Forecast forecast:weather.forecastList){
-            View view= LayoutInflater.from(this).inflate(R.layout.forecast_item,forecastLayout,false);
-            //inflater 是用来找 res/layout 下的 xml 布局文件，并且实例化；inflate()方法一般接收两个参数，第一个参数就是要加载的布局id，第二个参数是指给该布局的外部再嵌套一层父布局，如果不需要就直接传null。这样就成功成功创建了一个布局的实例，之后再将它添加到指定的位置就可以显示出来了。
-            TextView dateText=(TextView) view.findViewById(R.id.date_text);
-            TextView infoText=(TextView) view.findViewById(R.id.info_text);
-            TextView maxText=(TextView) view.findViewById(R.id.max_text);
-            TextView minText=(TextView) view.findViewById(R.id.min_text);
-            dateText.setText(forecast.date);
-            infoText.setText(forecast.more.info);
-            maxText.setText(forecast.temperature.max);
-            minText.setText(forecast.temperature.min);
-            forecastLayout.addView(view);
+        if (weather != null && "ok".equals(weather.status)) {
+
+            String cityName=weather.basic.cityName;
+            String updateTime=weather.basic.update.updateTime.split(" ")[1];//拆分字符
+            String degree=weather.now.temperature+"℃";
+            String weatherInfo=weather.now.more.info;
+            titleCity.setText(cityName);
+            titleUpdateTime.setText(updateTime);
+            degreeText.setText(degree);
+            weatherInfoText.setText(weatherInfo);
+            forecastLayout.removeAllViews();
+            for(Forecast forecast:weather.forecastList){
+                View view= LayoutInflater.from(this).inflate(R.layout.forecast_item,forecastLayout,false);
+                //inflater 是用来找 res/layout 下的 xml 布局文件，并且实例化；inflate()方法一般接收两个参数，第一个参数就是要加载的布局id，第二个参数是指给该布局的外部再嵌套一层父布局，如果不需要就直接传null。这样就成功成功创建了一个布局的实例，之后再将它添加到指定的位置就可以显示出来了。
+                TextView dateText=(TextView) view.findViewById(R.id.date_text);
+                TextView infoText=(TextView) view.findViewById(R.id.info_text);
+                TextView maxText=(TextView) view.findViewById(R.id.max_text);
+                TextView minText=(TextView) view.findViewById(R.id.min_text);
+                dateText.setText(forecast.date);
+                infoText.setText(forecast.more.info);
+                maxText.setText(forecast.temperature.max);
+                minText.setText(forecast.temperature.min);
+                forecastLayout.addView(view);
+            }
+            if (weather.aqi!=null){
+                aqiText.setText(weather.aqi.city.aqi);
+                pm25Text.setText(weather.aqi.city.pm25);
+            }
+            String comfort="舒适度"+weather.suggestion.comfort.info;
+            String carWash="洗车指数"+weather.suggestion.carWash.info;
+            String sport="运动建议"+weather.suggestion.sport.info;
+            comfortText.setText(comfort);
+            carWashText.setText(carWash);
+            sportText.setText(sport);
+            weatherLayout.setVisibility(View.VISIBLE);
+
+            Intent intent=new Intent(this, AutoUpdateService.class);
+            startService(intent);
+        }else {
+            Toast.makeText(WeatherActivity.this,"获取天气信息失败",Toast.LENGTH_SHORT).show();
         }
-        if (weather.aqi!=null){
-            aqiText.setText(weather.aqi.city.aqi);
-            pm25Text.setText(weather.aqi.city.pm25);
-        }
-        String comfort="舒适度"+weather.suggestion.comfort.info;
-        String carWash="洗车指数"+weather.suggestion.carWash.info;
-        String sport="运动建议"+weather.suggestion.sport.info;
-        comfortText.setText(comfort);
-        carWashText.setText(carWash);
-        sportText.setText(sport);
-        weatherLayout.setVisibility(View.VISIBLE);
     }
     //重置weatherId
     public void resetWeatherId(String id){
